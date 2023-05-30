@@ -8,6 +8,9 @@ from game import MatrixGame
 from player import EpsGreedyPlayer, LSTMPlayer, LSTMBatchPlayer, TitForTatPlayer
 
 
+np.random.seed(0)
+random.seed(0)
+
 # Configurations.
 # ======================================
 ALPHA   = 0.1

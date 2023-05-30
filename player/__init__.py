@@ -1,5 +1,6 @@
 from player.player import Player
 
+from player.AERPlayer import AERPlayer
 from player.AdaptGreedyPlayer import AdaptGreedyPlayer
 from player.AdaptGreedyBatchPlayer import AdaptGreedyBatchPlayer
 from player.EpsGreedyPlayer import EpsGreedyPlayer

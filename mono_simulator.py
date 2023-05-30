@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from game import MonopolyGame
-from player import AdaptGreedyPlayer, AdaptGreedyBatchPlayer
+from player import AERPlayer, AdaptGreedyPlayer, AdaptGreedyBatchPlayer
 
+
+np.random.seed(0)
+random.seed(0)
 
 # Configurations.
 # ======================================
@@ -33,7 +36,19 @@ print(actions)
 ])"""
 
 PLAYER_TYPE = 0
-if PLAYER_TYPE == 1:
+if PLAYER_TYPE == 0:
+    log_prefix = f"./log/run_mono_AER_{ALPHA}_{BETA}_{GAMMA}_{HORIZON}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    player_0 = AdaptGreedyPlayer(
+        pid=0, actions=actions,
+        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
+        log_freq=LOG_FREQ,
+    )
+    player_1 = AdaptGreedyPlayer(
+        pid=1, actions=actions,
+        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
+        log_freq=LOG_FREQ,
+    )
+elif PLAYER_TYPE == 1:
     log_prefix = f"./log/run_mono_Greedy_{ALPHA}_{BETA}_{GAMMA}_{HORIZON}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AdaptGreedyPlayer(
         pid=0, actions=actions,
