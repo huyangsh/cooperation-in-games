@@ -7,5 +7,5 @@ from player.EpsGreedyPlayer import EpsGreedyPlayer
 from player.RandomPlayer import RandomPlayer
 from player.TitForTatPlayer import TitForTatPlayer
 from player.EpisodicThreatPlayer import EpisodicThreatPlayer
-from player.LSTMPlayer import LSTMPlayer
-from player.LSTMBatchPlayer import LSTMBatchPlayer
+# from player.LSTMPlayer import LSTMPlayer
+# from player.LSTMBatchPlayer import LSTMBatchPlayer

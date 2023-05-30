@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+import random
 
-from game import MonopolyGame
+from game import MonopolyGame, MonopolyTrajectoryRunner
 from player import AERPlayer, AdaptGreedyPlayer, AdaptGreedyBatchPlayer
 
 
@@ -11,14 +12,24 @@ random.seed(0)
 
 # Configurations.
 # ======================================
-ALPHA   = 0.1
-BETA    = 2e-6
-GAMMA   = 0.95
-HORIZON = 1
+import argparse
+parser = argparse.ArgumentParser()
 
-T           = 10000000
-LOG_FREQ    = 500000
-BATCH_SIZE  = 1000
+parser.add_argument("--seed", default=0, type=int)
+parser.add_argument("--device", default="cpu", type=str, choices=["cpu", "cuda"])
+
+parser.add_argument("--alpha", default=0.1, type=float)
+parser.add_argument("--beta", default=2e-5, type=float)
+parser.add_argument("--gamma", default=0.95, type=float)
+parser.add_argument("--horizon", default=1, type=int)
+
+parser.add_argument("--player_type", type=int)
+parser.add_argument("--batch_size", default=1000, type=int)
+
+parser.add_argument("--T", default=int(1e7), type=int)
+parser.add_argument("--log_freq", default=int(5e5), type=int)
+
+args = parser.parse_args()
 # **************************************
 
 
@@ -35,42 +46,41 @@ print(actions)
     np.linspace(PN - XI*(PM-PN), PM + XI*(PM-PN), num=M)
 ])"""
 
-PLAYER_TYPE = 0
-if PLAYER_TYPE == 0:
-    log_prefix = f"./log/run_mono_AER_{ALPHA}_{BETA}_{GAMMA}_{HORIZON}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+if args.player_type == 0:
+    log_prefix = f"./log/run_mono_AER_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    player_0 = AERPlayer(
+        pid=0, actions=actions,
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
+    )
+    player_1 = AERPlayer(
+        pid=1, actions=actions,
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
+    )
+elif args.player_type == 1:
+    log_prefix = f"./log/run_mono_Greedy_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AdaptGreedyPlayer(
         pid=0, actions=actions,
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
     )
     player_1 = AdaptGreedyPlayer(
         pid=1, actions=actions,
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
     )
-elif PLAYER_TYPE == 1:
-    log_prefix = f"./log/run_mono_Greedy_{ALPHA}_{BETA}_{GAMMA}_{HORIZON}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-    player_0 = AdaptGreedyPlayer(
-        pid=0, actions=actions,
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
-    )
-    player_1 = AdaptGreedyPlayer(
-        pid=1, actions=actions,
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
-    )
-elif PLAYER_TYPE == 2:
-    log_prefix = f"./log/run_mono_batch_{ALPHA}_{BETA}_{GAMMA}_{HORIZON}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+elif args.player_type == 2:
+    log_prefix = f"./log/run_mono_batch_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AdaptGreedyBatchPlayer(
-        pid=0, actions=actions, batch_size=BATCH_SIZE, 
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
+        pid=0, actions=actions, batch_size=args.batch_size, 
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
     )
     player_1 = AdaptGreedyBatchPlayer(
-        pid=1, actions=actions, batch_size=BATCH_SIZE, 
-        alpha=ALPHA, beta=BETA, gamma=GAMMA, horizon=HORIZON,
-        log_freq=LOG_FREQ,
+        pid=1, actions=actions, batch_size=args.batch_size, 
+        alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
+        log_freq=args.log_freq,
     )
 else:
     assert False, "Invalid player type."
@@ -79,7 +89,7 @@ else:
 
 # Game simulator.
 # ======================================
-monopoly_game = MonopolyGame(
+game = MonopolyGame(
     players = [player_0, player_1],
     a = [2, 2],
     a0 = 1,
@@ -94,8 +104,8 @@ print("  Q* |", end="")
 for a in range(len(actions)):
     r_init = 0
     for b in range(len(actions)):
-        r_init += monopoly_game.reward_func([a,b])[0]
-    r_init = r_init / (1-GAMMA) / len(actions)
+        r_init += game._reward_func([a,b])[0]
+    r_init = r_init / (1-args.gamma) / len(actions)
     print(f"{r_init:.3f}".rjust(8), end="")
 
     for s_0 in range(len(actions)):
@@ -108,10 +118,11 @@ print()
     for s_1 in range(len(actions)):
         player_0.Q_table[(s_0,s_1)] = np.random.rand(len(actions)) * 10'''
 
-monopoly_game.run(
-    T = T,
-    clear_freq = 10*BATCH_SIZE,
-    log_freq = LOG_FREQ,
+runner = MonopolyTrajectoryRunner(game)
+runner.run(
+    T = args.T,
+    clear_size = 10*args.batch_size,
+    log_freq = args.log_freq,
     log_url = log_prefix + ".log",
     save_url = log_prefix + ".pkl",
 )

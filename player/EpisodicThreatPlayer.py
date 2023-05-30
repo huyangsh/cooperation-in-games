@@ -29,17 +29,17 @@ class EpisodicThreatPlayer(Player):
         else:
             assert False, f"Invalid action {i} for a ThreatPlayer instance."
 
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         if (t % self.period == 0):
             self.threaten = False
             return self.C_id
         else:
-            if state[1-self.pid] == D_id:
+            if state[1-self.pid] == self.D_id:
                 self.threaten = True
             
             return self.D_id if self.threaten else self.C_id
 
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         pass
         
     def get_data(self, t, period, full):

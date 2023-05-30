@@ -37,7 +37,7 @@ class AdaptGreedyBatchPlayer(Player):
     def get_action(self, i):
         return self.actions[i]
 
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         if t <= 2:
             action = random.choice(range(self.num_actions))
         else:    
@@ -55,7 +55,7 @@ class AdaptGreedyBatchPlayer(Player):
 
         return action
     
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         if t > 2:
             # Update at the end of a batch.
             if (t-1) % self.batch_size == 0:
@@ -64,10 +64,10 @@ class AdaptGreedyBatchPlayer(Player):
                 time_ed = i*self.batch_size+1
 
                 for tau in range(time_st, time_ed):
-                    prv_state = get_history(tau-1)[0]
-                    cur_state = get_history(tau)[0]
-                    prv_action = get_history(tau-1)[1][self.pid]
-                    prv_reward = get_history(tau-1)[2][self.pid]
+                    prv_state = history[tau-1][0]
+                    cur_state = history[tau][0]
+                    prv_action = history[tau-1][1][self.pid]
+                    prv_reward = history[tau-1][2][self.pid]
                     self.Q_table[prv_state][prv_action] += self.alpha * (prv_reward + self.gamma * self.Q_table[cur_state].max() - self.Q_table[prv_state][prv_action])
     
     def get_data(self, t, period, full):

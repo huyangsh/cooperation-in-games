@@ -21,10 +21,10 @@ class RandomPlayer(Player):
     def get_action(self, i):
         return self.actions[i]
 
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         return random.choices(range(self.num_actions), weights=self.prob, k=1)[0]
 
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         pass
         
     def get_data(self, t, period, full):

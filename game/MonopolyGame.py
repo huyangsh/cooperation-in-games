@@ -2,7 +2,7 @@ import numpy as np
 from math import exp
 from tqdm import tqdm
 
-from game.game import Game
+from game.game import Game, TrajectoryRunner
 from game.utils import mean, _print_redirect
 
 class MonopolyGame(Game):
@@ -13,26 +13,31 @@ class MonopolyGame(Game):
         self.c = c
         self.share0 = exp(a0 / mu)
     
-    def reward_func(self, actions):
+    def _reward_func(self, actions):
         prices = [self.players[i].get_action(actions[i]) for i in range(self.n)]
         share = [exp((self.a[i] - prices[i]) / self.mu) for i in range(self.n)]
         total_share = sum(share) + self.share0
         demand = [share[i] / total_share for i in range(self.n)]
         return [(prices[i] - self.c[i]) * demand[i] for i in range(self.n)]
 
-    def transit_func(self, state, actions):
+    def _transit_func(self, state, actions):
         return tuple(actions)
+
+
+class MonopolyTrajectoryRunner(TrajectoryRunner):
+    def __init__(self, game):
+        super(__class__, self).__init__(game=game)
     
     def _init_log(self, log_url):
         self.log = {}
-        for i in range(self.n):
+        for i in range(self.game.n):
             self.log[f"reward_{i}"] = []
-        self.log["visit"] = np.zeros(shape=(self.players[0].num_actions, self.players[1].num_actions))
-        self.log["explore"] = np.zeros(shape=(self.players[0].num_actions, self.players[1].num_actions))
+        self.log["visit"] = np.zeros(shape=(self.game.players[0].num_actions, self.game.players[1].num_actions))
+        self.log["explore"] = np.zeros(shape=(self.game.players[0].num_actions, self.game.players[1].num_actions))
 
         f = open(log_url, "a") if log_url != "" else None
         _print_redirect(f, "GAME: Bertrand's monopoly")
-        for player in self.players:
+        for player in self.game.players:
             _print_redirect(f, player.setting)
         
         tqdm.write("\n")
@@ -40,11 +45,11 @@ class MonopolyGame(Game):
         if not f: f.close()
     
     def _update_log(self, t):
-        for i in range(self.n):
+        for i in range(self.game.n):
             self.log[f"reward_{i}"].append(self.history[-1][2][i])
         self.log["visit"][self.history[-1][1][0],self.history[-1][1][1]] += 1
 
-        if self.players[0].is_random or self.players[1].is_random:
+        if self.game.players[0].is_random or self.game.players[1].is_random:
             self.log["explore"][self.history[-1][1][0],self.history[-1][1][1]] += 1
     
     def _print_log(self, t, log_url):
@@ -52,7 +57,7 @@ class MonopolyGame(Game):
 
         _print_redirect(f, "\n"+"*"*30+"\n*"+f"CURRENT STEP: {t+1}".center(28)+"*\n"+"*"*30+"\n")
         
-        for player in self.players:
+        for player in self.game.players:
             _print_redirect(f, player.get_print_data())
         
         _print_redirect(f, self._get_visit_str(visit_count=self.log["visit"], title="s_t"))
@@ -63,8 +68,8 @@ class MonopolyGame(Game):
         # tqdm.write(f"avg_last_100_rewards = ({mean(self.log['reward_0'][:-100]):.4f}, {mean(self.log['reward_1'][:-100]):.4f})")
         
         msg = "last actions ="
-        for i in range(10):
-            msg += f" ({self.history[-i][1][0]},{self.history[-i][1][1]}),"
+        for i in range(-10, 0, 1):
+            msg += f" ({self.history[i][1][0]},{self.history[i][1][1]}),"
         msg = msg[:-1] + "."
         _print_redirect(f, msg)
 
@@ -72,8 +77,8 @@ class MonopolyGame(Game):
         f.write("\n\n")
         if not f: f.close()
 
-        self.log["visit"] = np.zeros(shape=(self.players[0].num_actions, self.players[1].num_actions))
-        self.log["explore"] = np.zeros(shape=(self.players[0].num_actions, self.players[1].num_actions))
+        self.log["visit"] = np.zeros(shape=(self.game.players[0].num_actions, self.game.players[1].num_actions))
+        self.log["explore"] = np.zeros(shape=(self.game.players[0].num_actions, self.game.players[1].num_actions))
     
     def _get_visit_str(self, visit_count, title):
         msg = ""
@@ -84,18 +89,18 @@ class MonopolyGame(Game):
             visit_freq = visit_count
 
         msg += f"{title} |".rjust(6)
-        for a1 in range(self.players[1].num_actions):
+        for a1 in range(self.game.players[1].num_actions):
             msg += f"{a1}".rjust(6)
         msg += "\n"
 
-        msg += "------" + " -----"*self.players[1].num_actions + "\n"
+        msg += "------" + " -----"*self.game.players[1].num_actions + "\n"
         
-        for a0 in range(self.players[0].num_actions):
+        for a0 in range(self.game.players[0].num_actions):
             msg += f"{a0} |".rjust(6)
-            for a1 in range(self.players[1].num_actions):
+            for a1 in range(self.game.players[1].num_actions):
                 msg += f"{int(visit_freq[a0,a1])}".rjust(6)
             msg += "\n"
-        msg += "="*(6+6*self.players[1].num_actions)
+        msg += "="*(6+6*self.game.players[1].num_actions)
 
         return msg
 
@@ -104,6 +109,6 @@ class MonopolyGame(Game):
             return self.log
         else:
             data = {}
-            for i in range(self.n):
+            for i in range(self.game.n):
                 data[f"reward_{i}"] = self.log[f"reward_{i}"][-period:]
             return data

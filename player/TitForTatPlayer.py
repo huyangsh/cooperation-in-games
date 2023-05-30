@@ -29,7 +29,7 @@ class TitForTatPlayer(Player):
         else:
             assert False, f"Invalid action {i} for a ThreatPlayer instance."
 
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         if state and state[1-self.pid] == self.D_id:
             self.threat_status = self.period
         
@@ -39,7 +39,7 @@ class TitForTatPlayer(Player):
         else:
             return self.C_id
 
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         pass
         
     def get_data(self, t, period, full):

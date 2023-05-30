@@ -2,11 +2,11 @@ from abc import abstractmethod
 
 class Player:
     @abstractmethod
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         raise NotImplementedError
 
     @abstractmethod
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         raise NotImplementedError
     
     @abstractmethod

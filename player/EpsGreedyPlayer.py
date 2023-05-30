@@ -35,7 +35,7 @@ class EpsGreedyPlayer(Player):
     def get_action(self, i):
         return self.actions[i]
 
-    def play(self, t, state, get_history):
+    def play(self, t, state, history):
         if t <= 2:
             action = random.choice(range(self.num_actions))
         else:    
@@ -52,13 +52,13 @@ class EpsGreedyPlayer(Player):
 
         return action
 
-    def update(self, t, state, get_history):
+    def update(self, t, state, history):
         if t > 2:
             # Update using the last step.
-            prv_state = get_history(-1)[0]
+            prv_state = history[-1][0]
             cur_state = state
-            prv_action = get_history(-1)[1][self.pid]
-            prv_reward = get_history(-1)[2][self.pid]
+            prv_action = history[-1][1][self.pid]
+            prv_reward = history[-1][2][self.pid]
             self.Q_table[prv_state][prv_action] += self.alpha * (prv_reward + self.gamma * self.Q_table[cur_state].max() - self.Q_table[prv_state][prv_action])
 
     def get_data(self, t, period, full):
