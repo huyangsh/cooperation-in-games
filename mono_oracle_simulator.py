@@ -5,7 +5,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from game import MonopolyGame
-from game.utils import _print_redirect
+from game.utils import logging
 from player import AdaptGreedyPlayer, AdaptGreedyBatchPlayer
 
 
@@ -127,12 +127,12 @@ for t in bar:
 
     if log_freq > 0 and t % log_freq == 0: 
         with open(log_url, "a") as f:
-            _print_redirect(f, player_0.get_print_data())
-            _print_redirect(f, player_1.get_print_data())
+            logging(f, player_0.get_print_data())
+            logging(f, player_1.get_print_data())
     
     if (eval_freq > 0) and (t % eval_freq == 0):
         with open(log_url, "a") as f:
-            _print_redirect(f, f"Eval at time step {t}.\n")
+            logging(f, f"Eval at time step {t}.\n")
         monopoly_game.run(
             T = 1000,
             clear_freq = 0,

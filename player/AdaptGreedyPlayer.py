@@ -36,7 +36,7 @@ class AdaptGreedyPlayer(Player):
         return self.actions[i]
 
     def play(self, t, state, history):
-        if t <= 2:
+        if state is None:
             action = random.choice(range(self.num_actions))
         else:    
             # Take the eps-greedy action.
@@ -50,6 +50,14 @@ class AdaptGreedyPlayer(Player):
         
         if (self.log_freq > 0) and ((t+1) % self.log_freq == 0):
             self._update_log()
+
+        return action
+    
+    def play_eval(self, t, state, history):
+        if state is None:
+            action = random.choice(range(self.num_actions))
+        else:
+            action = self._argmax(self.Q_table[state])
 
         return action
 
