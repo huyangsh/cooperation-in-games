@@ -29,6 +29,8 @@ parser.add_argument("--T_eval", default=0, type=int)
 parser.add_argument("--log_freq", default=int(5e5), type=int)
 parser.add_argument("--clear_size", default=int(1e5), type=int)
 
+parser.add_argument("--draw_Q_table", action="store_true")
+
 args = parser.parse_args()
 
 np.random.seed(args.seed)
@@ -42,11 +44,12 @@ M       = 15
 XI      = 0.1
 PN      = 1.61338
 PM      = 1.73153
+
 actions = np.linspace(PN - XI*(PM-PN), PM + XI*(PM-PN), num=M)
-print(actions)
-"""actions = np.hstack([
-    np.linspace(0, PN - XI*(PM-PN), num=100),
-    np.linspace(PN - XI*(PM-PN), PM + XI*(PM-PN), num=M)
+"""PN_     = 1.61169214
+actions = np.hstack([
+    np.linspace(PN - XI*(PM-PN), PN_, num=50)[:-1],
+    np.linspace(PN_, PM + XI*(PM-PN), num=M-1)
 ])"""
 
 if args.player_type == 0:
@@ -108,7 +111,7 @@ with open(log_prefix+".log", "a") as f:
     logging(f, f"Using random seed {args.seed}.\n\n")
 
     # Default: Q-table initialized to Q*.
-    logging(f, " "*5 + "|" + "".join([f"a_{a}".rjust(8) for a in range(len(actions))]))
+    """logging(f, " "*5 + "|" + "".join([f"a_{a}".rjust(8) for a in range(len(actions))]))
     logging(f, "-"*6 + " -------"*len(actions))
     
     msg = "  Q* |"
@@ -123,12 +126,17 @@ with open(log_prefix+".log", "a") as f:
             for s_1 in range(len(actions)):
                 player_0.Q_table[(s_0,s_1)][a] = r_init
                 player_1.Q_table[(s_0,s_1)][a] = r_init
-    logging(f, msg+"\n\n")
+    logging(f, msg+"\n\n")"""
 
     # Alternative: Q-table initialized to random.
     '''for s_0 in range(len(actions)):
         for s_1 in range(len(actions)):
             player_0.Q_table[(s_0,s_1)] = np.random.rand(len(actions)) * 10'''
+    
+    # Alternative: Q-table initialized to 0.
+    for s_0 in range(len(actions)):
+        for s_1 in range(len(actions)):
+            player_0.Q_table[(s_0,s_1)] = np.zeros(shape=(len(actions),))
 
 runner = MonopolyTrajectoryRunner(
     game = game,
@@ -144,16 +152,17 @@ runner.run()
 # Plotting.
 # ======================================
 # Q-table
-fig = plt.figure(figsize=(50,50))
-Q_table_0 = player_0.log["Q_table"]
-x = np.array(range(len(Q_table_0)))
-for i in range(M):
-    for j in range(M):
-        ax = fig.add_subplot(M,M,i*M+j+1)
-        for a in range(M):
-            y_a = np.array([x[(i,j)][a] for x in Q_table_0])
-            ax.plot(x, y_a, label=f"{a}")
-fig.savefig(log_prefix + "_Q-table.png", dpi=200)
+if args.draw_Q_table:
+    fig = plt.figure(figsize=(50,50))
+    Q_table_0 = player_0.log["Q_table"]
+    x = np.array(range(len(Q_table_0)))
+    for i in range(M):
+        for j in range(M):
+            ax = fig.add_subplot(M,M,i*M+j+1)
+            for a in range(M):
+                y_a = np.array([x[(i,j)][a] for x in Q_table_0])
+                ax.plot(x, y_a, label=f"{a}")
+    fig.savefig(log_prefix + "_Q-table.png", dpi=200)
 # **************************************
 
 
