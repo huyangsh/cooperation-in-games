@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 import itertools
 
-log_prefix = "./log/run_mono_0.1_2e-05_0.95_1_20230413_000756"
+log_prefix = "./log/monopoly_Greedy_0.1_2e-07_0.95_1_1000_0_20230530_214418_run"
 HORIZON = 1
 M = 15
 

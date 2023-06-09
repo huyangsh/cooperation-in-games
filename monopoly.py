@@ -4,7 +4,7 @@ from datetime import datetime
 import random
 from tqdm import tqdm
 
-from game import MonopolyGame, MonopolyTrajectoryRunner
+from game import MonopolyGame, MonopolyTrajectoryRunner, MonopolyOracleRunner
 from player import AERPlayer, AdaptGreedyPlayer, AdaptGreedyBatchPlayer
 from game.utils import logging
 
@@ -29,6 +29,7 @@ parser.add_argument("--T_eval", default=0, type=int)
 parser.add_argument("--log_freq", default=int(5e5), type=int)
 parser.add_argument("--clear_size", default=int(1e5), type=int)
 
+parser.add_argument("--runner", default="trajectory", type=str, choices=["trajectory", "oracle"])
 parser.add_argument("--draw_Q_table", action="store_true")
 
 args = parser.parse_args()
@@ -53,7 +54,7 @@ actions = np.hstack([
 ])"""
 
 if args.player_type == 0:
-    log_prefix = f"./log/monopoly_AER_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_prefix = f"./log/monopoly_AER_{args.runner}_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AERPlayer(
         pid=0, actions=actions,
         alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
@@ -65,7 +66,7 @@ if args.player_type == 0:
         log_freq=args.log_freq,
     )
 elif args.player_type == 1:
-    log_prefix = f"./log/monopoly_Greedy_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.batch_size}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_prefix = f"./log/monopoly_Greedy_{args.runner}_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.batch_size}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AdaptGreedyPlayer(
         pid=0, actions=actions,
         alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
@@ -77,7 +78,7 @@ elif args.player_type == 1:
         log_freq=args.log_freq,
     )
 elif args.player_type == 2:
-    log_prefix = f"./log/monopoly_batch_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_prefix = f"./log/monopoly_batch_{args.runner}_{args.alpha}_{args.beta}_{args.gamma}_{args.horizon}_{args.seed}_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     player_0 = AdaptGreedyBatchPlayer(
         pid=0, actions=actions, batch_size=args.batch_size, 
         alpha=args.alpha, beta=args.beta, gamma=args.gamma, horizon=args.horizon,
@@ -111,7 +112,7 @@ with open(log_prefix+".log", "a") as f:
     logging(f, f"Using random seed {args.seed}.\n\n")
 
     # Default: Q-table initialized to Q*.
-    """logging(f, " "*5 + "|" + "".join([f"a_{a}".rjust(8) for a in range(len(actions))]))
+    logging(f, " "*5 + "|" + "".join([f"a_{a}".rjust(8) for a in range(len(actions))]))
     logging(f, "-"*6 + " -------"*len(actions))
     
     msg = "  Q* |"
@@ -126,25 +127,39 @@ with open(log_prefix+".log", "a") as f:
             for s_1 in range(len(actions)):
                 player_0.Q_table[(s_0,s_1)][a] = r_init
                 player_1.Q_table[(s_0,s_1)][a] = r_init
-    logging(f, msg+"\n\n")"""
+    logging(f, msg+"\n\n")
 
     # Alternative: Q-table initialized to random.
     '''for s_0 in range(len(actions)):
         for s_1 in range(len(actions)):
-            player_0.Q_table[(s_0,s_1)] = np.random.rand(len(actions)) * 10'''
+            player_0.Q_table[(s_0,s_1)] = np.random.rand(len(actions)) * 3'''
     
     # Alternative: Q-table initialized to 0.
-    for s_0 in range(len(actions)):
+    '''for s_0 in range(len(actions)):
         for s_1 in range(len(actions)):
-            player_0.Q_table[(s_0,s_1)] = np.zeros(shape=(len(actions),))
+            player_0.Q_table[(s_0,s_1)] = np.zeros(shape=(len(actions),))'''
 
-runner = MonopolyTrajectoryRunner(
-    game = game,
-    T = args.T, T_eval = args.T_eval,
-    clear_size = args.clear_size,
-    log_freq = args.log_freq,
-    log_prefix = log_prefix
-)
+    logging(f, f"Using runner {args.runner}.\n")
+    if args.runner == "trajectory":
+        runner = MonopolyTrajectoryRunner(
+            game = game,
+            T = args.T, T_eval = args.T_eval,
+            clear_size = args.clear_size,
+            log_freq = args.log_freq,
+            log_prefix = log_prefix
+        )
+    elif args.runner == "oracle":
+        runner = MonopolyOracleRunner(
+            game = game,
+            random_init_func = lambda: tuple( random.choices(np.arange(len(actions)), k=2) ),
+            T = args.T, T_eval = args.T_eval,
+            clear_size = args.clear_size,
+            log_freq = args.log_freq,
+            log_prefix = log_prefix
+        )
+    else:
+        raise NotImplementedError
+
 runner.run()
 # **************************************
 
